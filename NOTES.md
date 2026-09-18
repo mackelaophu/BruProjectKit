@@ -100,3 +100,20 @@ RubikLarPetrus/, GenerateScripts/) để chạy lại `tuist scaffold` sạch t�
 
 Chưa xác nhận: `tuist scaffold` sau fix này chạy hết toàn bộ item không lỗi, và `tuist generate` +
 build Xcode thật (đang chờ bạn chạy lại).
+
+## Bổ sung AppIcon default (2026-09-18, theo yêu cầu "template cần có icon default")
+AdapfitV2 gốc có sẵn `AppIcon.appiconset` với icon thật (hình quả tạ + mũi tên tăng trưởng, màu
+teal) — đã xem trực tiếp file `1024.png`, xác nhận đây là branding riêng của app fitness Adapfit,
+không mang theo vào template base theo đúng nguyên tắc loại bỏ nghiệp vụ riêng.
+
+Đã tạo icon placeholder trung tính (nền xanh lam đậm + 2 vòng tròn lồng nhau màu trắng, không có
+chữ/logo cụ thể nào) bằng script Python, generate đủ 37 kích thước + `Contents.json` y hệt cấu
+trúc/idiom của AdapfitV2 gốc (iphone/ipad/mac/watch/ios-marketing/watch-marketing — giữ đúng
+"giống cấu trúc" dù nội dung ảnh khác). Bundle tại
+`Templates/NewProject/Sources/AppIcon/AppIcon.appiconset/`, gắn vào manifest qua
+`.directory(path: "\(name)/Resources/Assets.xcassets", sourcePath: "Sources/AppIcon/AppIcon.appiconset")`
+— tên thư mục "AppIcon.appiconset" cố định (không phụ thuộc `{{ name }}`) nên dùng `.directory`
+bình thường được, không vướng bug basename như các target động khác.
+
+Chưa xác nhận: `tuist generate` + mở Xcode có hiển thị đúng icon placeholder này không (đang chờ
+bạn chạy lại sau khi xoá cây `RubikLarPetrus` cũ và scaffold lại).

@@ -103,7 +103,7 @@ let template = Template(
         // (cùng lý do path=thư mục cha: "\(nameAttribute)/Sources", không phải ".../Sources/Home")
         .directory(path: "\(nameAttribute)/Sources", sourcePath: "Sources/Home"),
 
-        // MARK: Resource rỗng
+        // MARK: Resource
         .string(
             path: "\(nameAttribute)/Resources/Assets.xcassets/Contents.json",
             contents: """
@@ -115,6 +115,11 @@ let template = Template(
             }
             """
         ),
+        // AppIcon placeholder chung (không mang branding/nghiệp vụ Adapfit — đã kiểm tra icon gốc
+        // của AdapfitV2 là hình quả tạ + mũi tên, đặc thù riêng cho app fitness nên KHÔNG mang theo).
+        // Icon đặt tên cố định "AppIcon.appiconset" (không phụ thuộc {{ name }}) nên dùng được
+        // .directory bình thường — path là thư mục cha "Assets.xcassets", đúng quy tắc đã sửa ở trên.
+        .directory(path: "\(nameAttribute)/Resources/Assets.xcassets", sourcePath: "Sources/AppIcon/AppIcon.appiconset"),
         .string(
             path: "\(nameAttribute)/Resources/Localizes/en.lproj/Localizable.strings",
             contents: "// English Localized Strings\n"
