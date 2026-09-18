@@ -69,7 +69,7 @@ let template = Template(
         // MARK: Cơ chế scaffold module con — mang nguyên convention hiện có của AdapfitV2
         .directory(path: "Tuist/Templates/Module", sourcePath: "Sources/TuistTemplates/Module"),
         .directory(path: "Tuist/Templates/ChildModule", sourcePath: "Sources/TuistTemplates/ChildModule"),
-        .directory(path: "Scripts", sourcePath: "Sources/GenerateScripts"),
+        .directory(path: ".", sourcePath: "Sources/GenerateScripts"),
 
         // MARK: Main app skeleton
         .file(path: "\(nameAttribute)/Sources/\(nameAttribute)App.swift", templatePath: "Stencils/App.stencil"),
