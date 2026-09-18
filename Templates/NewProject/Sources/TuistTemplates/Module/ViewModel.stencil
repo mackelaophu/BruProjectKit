@@ -1,0 +1,14 @@
+import Foundation
+import Common
+
+protocol {{ name }}ViewModelProtocol: AnyObject {
+    // Add viewmodel methods here
+}
+
+class {{ name }}ViewModel: BaseViewModel, ViewModelProtocol, {{ name }}ViewModelProtocol {
+    let repo: {{ name }}Repository
+
+    init(repo: {{ name }}Repository) {
+        self.repo = repo
+    }
+}

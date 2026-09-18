@@ -1,0 +1,19 @@
+import SwiftUI
+import Common
+
+struct {{ name }}RootView: View {
+
+    @StateObject var viewModel: {{ name }}ViewModel
+
+    init(
+        viewModel: {{ name }}ViewModel
+    ) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
+
+    var body: some View {
+        {{ name }}View(
+            viewModel: viewModel
+        )
+    }
+}

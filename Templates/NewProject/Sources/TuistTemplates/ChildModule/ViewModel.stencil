@@ -1,0 +1,18 @@
+import Foundation
+import Common
+
+protocol {{ name }}ViewModelProtocol: AnyObject {
+    // Add viewmodel methods here
+}
+
+@MainActor
+class {{ name }}ViewModel: ViewModelProtocol, {{ name }}ViewModelProtocol, ObservableObject {
+    let repo: {{ name }}Repository
+
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+
+    init(repo: {{ name }}Repository) {
+        self.repo = repo
+    }
+}

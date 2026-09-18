@@ -1,0 +1,16 @@
+import SwiftUI
+import Common
+
+@MainActor
+public class {{ name }}Router {
+
+    public init() {}
+
+    public func initView() -> some View {
+        let vm = {{ parentModule }}DI.shared.resolve({{ name }}ViewModel.self)
+
+        return {{ name }}View(
+            viewModel: vm
+        )
+    }
+}

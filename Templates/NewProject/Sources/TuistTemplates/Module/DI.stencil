@@ -1,0 +1,18 @@
+import Foundation
+import Common
+
+@MainActor
+public class {{ name }}DI {
+    public static let shared = {{ name }}DI()
+    private let container = DIContainer()
+
+    func resolve<T>(_ type: T.Type) -> T {
+        container.resolve(type)
+    }
+
+    public func registers(network: NetworkProtocol) {
+        container.register({{ name }}ViewModel.self, scope: .transient) {
+            {{ name }}ViewModel(repo: {{ name }}Repository(networkService: network))
+        }
+    }
+}

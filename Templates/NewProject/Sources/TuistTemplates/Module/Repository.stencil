@@ -1,0 +1,12 @@
+import Foundation
+import Common
+
+@MainActor
+public protocol {{ name }}RepoProtocol {
+    // Add protocol methods here
+}
+
+@MainActor
+class {{ name }}Repository: RepoProtocol, {{ name }}RepoProtocol {
+    // Add implementation here
+}

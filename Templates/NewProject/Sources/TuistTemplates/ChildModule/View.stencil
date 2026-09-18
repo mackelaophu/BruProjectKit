@@ -1,0 +1,27 @@
+import SwiftUI
+import UICore
+import Common
+
+struct {{ name }}View: View {
+    @EnvironmentObject private var nav: NavigationManager<AppRoute>
+    let viewModel: {{ name }}ViewModel
+
+    var body: some View {
+        VStack {
+            Text("Welcome to {{ name }}")
+                .appStyle(.titleLg)
+        }
+        .overlay(alignment: .top) {
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .appStyle(.labelMd)
+                    .foregroundStyle(.white)
+                    .padding()
+                    .background(Color.red.opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut, value: viewModel.errorMessage)
+    }
+}

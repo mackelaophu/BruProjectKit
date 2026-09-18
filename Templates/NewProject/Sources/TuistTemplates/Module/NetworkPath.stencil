@@ -1,0 +1,7 @@
+import Common
+
+extension NetworkPath {
+    public static var {{ name|lowercase }} : String {
+        "/v1/{{ name|lowercase }}"
+    }
+}

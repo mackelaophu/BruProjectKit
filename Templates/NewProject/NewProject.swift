@@ -57,6 +57,9 @@ let template = Template(
 
         // MARK: Module dùng chung — copy nguyên vẹn từ AdapfitV2, không templating bên trong
         .directory(path: "Targets/Common", sourcePath: "Sources/Common"),
+        // AdapfitImage.swift gốc đã bị loại khỏi thư mục Common được bundle sẵn (Sources/Common) —
+        // sinh riêng ở đây để đổi tên file theo {{ name }}Image.swift (đã chốt, xem NOTES.md).
+        .file(path: "Targets/Common/Sources/\(nameAttribute)Image.swift", templatePath: "Stencils/AppImage.stencil"),
         .directory(path: "Targets/UICore", sourcePath: "Sources/UICore"),
         .directory(path: "Targets/\(nameAttribute)Network", sourcePath: "Sources/Network"),
         // SocketService bản "trần" (đã bỏ phần OTTHandler/OTTItem/OTTType riêng của OTT) — chỉ

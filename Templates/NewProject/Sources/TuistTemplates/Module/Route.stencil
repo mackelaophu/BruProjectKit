@@ -1,0 +1,6 @@
+import Foundation
+import Common
+
+public extension AppRoute {
+    static let {{ name|lowercase }}Root = AppRoute("{{ name|lowercase }}_root", module: "{{ name|lowercase }}")
+}
