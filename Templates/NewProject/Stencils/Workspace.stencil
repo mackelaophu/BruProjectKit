@@ -1,0 +1,27 @@
+import ProjectDescription
+
+let workspace = Workspace(
+    name: "{{ name }}",
+    projects: ["."],
+    schemes: [
+        .scheme(
+            name: "{{ name }}-Workspace",
+            shared: true,
+            buildAction: .buildAction(
+                targets: [
+                    .project(path: ".", target: "{{ name }}"),
+                    .project(path: ".", target: "Common"),
+                    .project(path: ".", target: "UICore"),
+                    .project(path: ".", target: "{{ name }}Network"),
+                ]
+            ),
+            runAction: .runAction(
+                configuration: "Debug-PROD",
+                executable: .project(path: ".", target: "{{ name }}")
+            ),
+            archiveAction: .archiveAction(configuration: "Release-PROD"),
+            profileAction: .profileAction(configuration: "Release-PROD"),
+            analyzeAction: .analyzeAction(configuration: "Debug-PROD")
+        )
+    ]
+)

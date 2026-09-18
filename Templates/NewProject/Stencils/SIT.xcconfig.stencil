@@ -1,0 +1,9 @@
+// Import toàn bộ cấu hình từ file Shared
+#include "Shared.xcconfig"
+
+// Ghi đè các biến đặc thù cho môi trường SIT
+APP_NAME = {{ name }} (SIT)
+APP_BUNDLE_ID = {{ bundleIdPrefix }}.{{ name|lowercase }}.sit
+API_BASE_URL = http:\/\/10.42.0.1:8081
+{% if includeFirebase %}FIREBASE_PLIST_NAME = GoogleService-Info-SIT
+{% endif %}

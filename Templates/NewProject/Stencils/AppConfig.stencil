@@ -1,0 +1,58 @@
+import Foundation
+
+struct AppConfig {
+    static var baseURLString: String {
+        // 1. Đọc chuỗi raw từ Info.plist
+        var raw = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String ?? ""
+
+        // 2. Tiến hành làm sạch chuỗi URL (Xử lý các ký tự lạ do escape lỗi trong xcconfig)
+        raw = sanitizeURLString(raw).replacingOccurrences(of: ":8081", with: "")
+            .replacingOccurrences(of: "http://", with: "")
+            .replacingOccurrences(of: "https://", with: "")
+
+        let isUnresolved = raw.isEmpty || raw.hasPrefix("$(")
+        if !isUnresolved {
+            return raw
+        }
+
+        #if DEBUG
+        return "https://dev-api.placeholder.com"
+        #else
+        fatalError("API_BASE_URL không hợp lệ trong Info.plist: \(raw)")
+        #endif
+    }
+    static var apiBaseURL: URL {
+        // 1. Đọc chuỗi raw từ Info.plist
+        var raw = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String ?? ""
+
+        // 2. Tiến hành làm sạch chuỗi URL (Xử lý các ký tự lạ do escape lỗi trong xcconfig)
+        raw = sanitizeURLString(raw)
+
+        let isUnresolved = raw.isEmpty || raw.hasPrefix("$(")
+        if !isUnresolved, let url = URL(string: raw) {
+            return url
+        }
+
+        #if DEBUG
+        return URL(string: "https://dev-api.placeholder.com")!
+        #else
+        fatalError("API_BASE_URL không hợp lệ trong Info.plist: \(raw)")
+        #endif
+    }
+
+    /// Hàm hỗ trợ loại bỏ các ký tự escape lỗi như \, %, $ thừa trong chuỗi URL
+    private static func sanitizeURLString(_ urlString: String) -> String {
+        // Giải mã %encoding nếu có (ví dụ %5C biến thành \)
+        var cleanString = urlString.removingPercentEncoding ?? urlString
+
+        // Xóa các dấu gạch chéo ngược '\' do viết kiểu 'http:\/\/'
+        cleanString = cleanString.replacingOccurrences(of: "\\", with: "")
+
+        // Xóa ký tự '$' thừa nếu lỡ tay viết nhầm dạng 'http://$192.168...'
+        cleanString = cleanString.replacingOccurrences(of: "http:/$", with: "http://")
+        cleanString = cleanString.replacingOccurrences(of: "https:/$", with: "https://")
+
+        // Trim bỏ khoảng trắng hoặc ký tự xuống dòng ở 2 đầu nếu có
+        return cleanString.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}

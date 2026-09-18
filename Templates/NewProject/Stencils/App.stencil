@@ -1,0 +1,45 @@
+import SwiftUI
+import Common
+import UICore
+
+@main
+struct {{ name }}App: App {
+    // AppDelegate quản lý DI setup và network lifecycle.
+    // @UIApplicationDelegateAdaptor đảm bảo AppDelegate.didFinishLaunching
+    // chạy trước khi body được render.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    @AppStorage("theme-{{ name|lowercase }}") var themeStorage: String = ""
+    init() {
+        AppTheme.loadSavedTheme(theme: themeStorage)
+    }
+    private let session = AppSession()
+    @StateObject private var nav = NavigationManager<AppRoute>(
+        cacheKey: "app.navigation"
+    )
+    @StateObject private var popup: PopupManager = .init()
+    // Popup/loading được render trong 1 UIWindow riêng (nổi trên cả
+    // .sheet()/.fullScreenCover(), vd M3BottomSheet) thay vì .overlay()
+    // thường ở gốc WindowGroup — xem OverlayWindow.swift để biết lý do.
+    @StateObject private var overlayWindow = OverlayWindowController()
+    @AppStorage("appLanguague") var appLanguague = "vi"
+
+    var body: some Scene {
+        WindowGroup {
+            ZStack(alignment: .top){
+                AppRouter()
+            }
+            .onAppear {
+                overlayWindow.attachToActiveScene {
+                    PopupLoadingOverlayView()
+                        .environmentObject(popup)
+                }
+            }
+            .environment(\.network, appDelegate.network)
+            .environment(\.session, session)
+            .environmentObject(nav)
+            .environmentObject(popup)
+            .environment(\.locale, .init(identifier: appLanguague))
+        }
+    }
+}

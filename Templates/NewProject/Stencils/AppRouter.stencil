@@ -1,0 +1,83 @@
+import SwiftUI
+import Common
+{% if includeRealtimeSocket %}import {{ name }}Network
+{% endif %}{% if includeFirebase %}import FirebaseMessaging
+{% endif %}
+
+// MARK: - AppRoute
+extension AppRoute {
+    public static let home = AppRoute("home")
+}
+// MARK: - AppRouter
+struct AppRouter: View {
+    @EnvironmentObject private var nav: NavigationManager<AppRoute>
+
+    var body: some View {
+        NavigationStack(path: $nav.path) {
+            // Root mặc định = Home
+            HomeRouter()
+                .initView()
+                .navigationDestination(for: AppRoute.self) { route in
+                    destination(for: route)
+                }
+        }
+        .font(.bodyMd)
+        .animation(.easeInOut(duration: 0.25), value: nav.path)
+{% if includeRealtimeSocket %}        .onAppear {
+            let imei = DeviceParams.shared.imei
+            let baseURLString = AppConfig.baseURLString
+            let accessToken = CacheManager.shared.get(forType: .keychain,
+                                                      forKey: "accessToken",
+                                                      type: String.self) ?? ""
+            // TODO: thay đúng path/port websocket thật của bạn
+            let url = "ws://\(baseURLString)/ws?token=\(accessToken)&imei=\(imei)"
+            SocketService.shared.connect(socketURL: url)
+        }
+{% endif %}
+{% if includeFirebase %}        .onAppear {
+            let fcmToken = Messaging.messaging().fcmToken
+            if let fcmToken = fcmToken {
+                print("FCM Token: \(fcmToken)")
+            }
+        }
+{% endif %}
+    }
+
+    @ViewBuilder
+    private func destination(for route: AppRoute) -> some View {
+        switch route {
+        case .home:
+            HomeRouter().initView()
+        default:
+            defaultDestination(for: route)
+        }
+    }
+
+    @ViewBuilder
+    private func defaultDestination(for route: AppRoute) -> some View {
+        if route.isParamsRoute, route.module == "main_app" {
+            // đoạn này xử lý case route ở mainApp, cần truyền params vào màn hình, mở từ deeplink với params
+            paramsRouteDestination(for: route.rawValue)
+        } else if !route.module.isEmpty {
+            // đoạn này xử lý case route ở module
+            switch route.module {
+            case "home":
+                homeDestination(for: route)
+            default:
+                Text("Module không tồn tại")
+            }
+        } else {
+            // Fallback an toàn nếu có route rác
+            Text("Module không tồn tại")
+        }
+    }
+
+    @ViewBuilder
+    private func paramsRouteDestination(for path: String) -> some View {
+        if decodeRouteQueryParams(path) != nil {
+            Text("Lỗi: Không đúng định dạng URL")
+        } else {
+            Text("Lỗi: Không đúng định dạng URL")
+        }
+    }
+}

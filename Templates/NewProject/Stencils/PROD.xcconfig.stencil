@@ -1,0 +1,7 @@
+#include "Shared.xcconfig"
+
+APP_NAME = {{ name }}
+APP_BUNDLE_ID = {{ bundleIdPrefix }}.{{ name|lowercase }}
+API_BASE_URL = https:\/\/api.company.com
+{% if includeFirebase %}FIREBASE_PLIST_NAME = GoogleService-Info-PROD
+{% endif %}

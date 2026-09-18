@@ -1,0 +1,80 @@
+{% if includeRealtimeSocket %}import Foundation
+import Starscream
+
+// Bản "trần" của SocketService gốc (Targets/OTT/Sources/SocketService.swift trong AdapfitV2) —
+// đã bỏ phần gọi OTTHandler.shared.handlePresentNoti(...) và kiểu OTTItem/OTTType (logic xử lý
+// thông báo riêng của tính năng OTT). Nơi gọi tự gắn logic xử lý message qua onMessageReceived/
+// onDataReceived.
+@MainActor
+public class SocketService: WebSocketDelegate {
+    public static let shared = SocketService()
+
+    public private(set) var socket: WebSocket?
+
+    public var onMessageReceived: ((String) -> Void)?
+    public var onDataReceived: ((Data) -> Void)?
+
+    private init() {}
+
+    public func connect(socketURL: String, token: String? = nil) {
+        guard let url = URL(string: socketURL) else { return }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 5
+
+        // Cấu hình pass token qua Header Authorization
+        if let token = token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        socket = WebSocket(request: request)
+        socket?.delegate = self
+        socket?.connect()
+    }
+
+    public func disconnect() {
+        socket?.disconnect()
+    }
+
+    public func send(string: String) {
+        socket?.write(string: string) {
+            print("[SocketService] Sent string message")
+        }
+    }
+
+    public func send(data: Data) {
+        socket?.write(data: data) {
+            print("[SocketService] Sent binary data")
+        }
+    }
+
+    // MARK: - WebSocketDelegate
+    public nonisolated func didReceive(event: WebSocketEvent, client: any WebSocketClient) {
+        switch event {
+        case .connected(let headers):
+            Task { @MainActor in print("[SocketService] Socket connected, headers: \(headers)") }
+        case .disconnected(let reason, let code):
+            Task { @MainActor in print("[SocketService] Socket disconnected: \(reason) with code: \(code)") }
+        case .text(let string):
+            Task { @MainActor in
+                print("[SocketService] Received text: \(string)")
+                self.onMessageReceived?(string)
+            }
+        case .binary(let data):
+            Task { @MainActor in
+                print("[SocketService] Received data: \(data.count) bytes")
+                self.onDataReceived?(data)
+            }
+        case .ping(_), .pong(_), .viabilityChanged(_), .reconnectSuggested(_):
+            break
+        case .cancelled:
+            Task { @MainActor in print("[SocketService] Socket cancelled") }
+        case .error(let error):
+            let errorDesc = String(describing: error)
+            Task { @MainActor in print("[SocketService] Socket error: \(errorDesc)") }
+        case .peerClosed:
+            Task { @MainActor in print("[SocketService] Socket peer closed") }
+        }
+    }
+}
+{% endif %}

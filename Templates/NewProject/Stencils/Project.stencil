@@ -1,0 +1,113 @@
+import ProjectDescription
+
+func makeModule(name: String, dependencies: [TargetDependency], settings: Settings? = nil) -> Target {
+  return .target(
+    name: name,
+    destinations: .iOS,
+    product: .framework,
+    bundleId: "{{ bundleIdPrefix }}.\(name.lowercased())",
+    deploymentTargets: .iOS("17.0"),
+    sources: ["Targets/\(name)/Sources/**"],
+    resources: ["Targets/\(name)/Resources/**"],
+    dependencies: dependencies,
+    settings: settings
+  )
+}
+let settings = Settings.settings(
+  base: [
+    "SWIFT_VERSION": "6.0",
+    "SWIFT_STRICT_CONCURRENCY": "complete",
+    "CODE_SIGN_STYLE": "Automatic",
+{% if developmentTeam %}    "DEVELOPMENT_TEAM": "{{ developmentTeam }}",
+{% endif %}    "CODE_SIGN_IDENTITY": "iPhone Developer",
+  ],
+  configurations: [
+    .debug(name: "Debug-SIT", xcconfig: "Tuist/Configs/SIT.xcconfig"),
+    .release(name: "Release-SIT", xcconfig: "Tuist/Configs/SIT.xcconfig"),
+    .debug(name: "Debug-PROD", xcconfig: "Tuist/Configs/PROD.xcconfig"),
+    .release(name: "Release-PROD", xcconfig: "Tuist/Configs/PROD.xcconfig"),
+  ],
+  defaultSettings: .recommended,
+)
+let project = Project(
+  name: "{{ name }}",
+  organizationName: "{{ organizationName }}",
+  options: .options(
+    automaticSchemesOptions: .disabled,
+    defaultKnownRegions: ["vi", "en"],
+    developmentRegion: "vi",
+    disableBundleAccessors: false,
+    disableShowEnvironmentVarsInScriptPhases: true,
+    disableSynthesizedResourceAccessors: false,
+  ),
+  settings: settings,
+  targets: [
+    makeModule(name: "Common", dependencies: []),
+    makeModule(name: "{{ name }}Network", dependencies: [.target(name: "Common")]),
+    makeModule(name: "UICore", dependencies: [.target(name: "Common"), .external(name: "Lottie")]),
+    .target(
+      name: "{{ name }}",
+      destinations: .iOS,
+      product: .app,
+      bundleId: "{{ bundleIdPrefix }}.{{ name|lowercase }}",
+      deploymentTargets: .iOS("17.0"),
+      infoPlist: .extendingDefault(
+        with: [
+          "UILaunchScreen": [
+            "UIColorName": "",
+            "UIImageName": "",
+          ],
+          "CFBundleDisplayName": "$(APP_NAME)",
+          "CFBundleShortVersionString": "$(APP_VERSION)",
+          "CFBundleVersion": "$(APP_BUILD_NUMBER)",
+          "API_BASE_URL": "$(API_BASE_URL)",
+          "NSAppTransportSecurity": [
+            "NSAllowsArbitraryLoads": true
+          ],
+{% if includeFirebase %}          "UIBackgroundModes": [
+            "fetch",
+            "remote-notification"
+          ],
+          "FirebaseAppDelegateProxyEnabled": false,
+{% endif %}        ]),
+      sources: ["{{ name }}/Sources/**"],
+      resources: ["{{ name }}/Resources/**"],
+      entitlements: .file(path: "{{ name }}/{{ name }}.entitlements"),
+      dependencies: [
+        .target(name: "Common"),
+        .target(name: "UICore"),
+        .target(name: "{{ name }}Network"),
+{% if includeFirebase %}        .external(name: "FirebaseMessaging"),
+{% endif %}      ]
+    ),
+    .target(
+      name: "{{ name }}Tests",
+      destinations: .iOS,
+      product: .unitTests,
+      bundleId: "{{ bundleIdPrefix }}.{{ name|lowercase }}tests",
+      infoPlist: .default,
+      sources: ["{{ name }}/Tests/**"],
+      dependencies: [.target(name: "{{ name }}")]
+    ),
+  ],
+  schemes: [
+    .scheme(
+      name: "{{ name }}-SIT",
+      shared: true,
+      buildAction: .buildAction(targets: ["{{ name }}"]),
+      runAction: .runAction(configuration: "Debug-SIT", executable: "{{ name }}"),
+      archiveAction: .archiveAction(configuration: "Release-SIT"),
+      profileAction: .profileAction(configuration: "Release-SIT"),
+      analyzeAction: .analyzeAction(configuration: "Debug-SIT")
+    ),
+    .scheme(
+      name: "{{ name }}-PROD",
+      shared: true,
+      buildAction: .buildAction(targets: ["{{ name }}"]),
+      runAction: .runAction(configuration: "Debug-PROD", executable: "{{ name }}"),
+      archiveAction: .archiveAction(configuration: "Release-PROD"),
+      profileAction: .profileAction(configuration: "Release-PROD"),
+      analyzeAction: .analyzeAction(configuration: "Debug-PROD")
+    ),
+  ]
+)

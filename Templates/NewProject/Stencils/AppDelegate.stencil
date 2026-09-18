@@ -1,0 +1,90 @@
+import UIKit
+import Common
+import {{ name }}Network
+{% if includeFirebase %}import FirebaseCore
+import FirebaseMessaging
+import UserNotifications
+{% endif %}
+
+@MainActor
+class AppDelegate: NSObject, UIApplicationDelegate {
+
+    // Network sống cùng vòng đời AppDelegate (= toàn bộ app).
+    // {{ name }}App đọc qua appDelegate.network để inject vào Environment.
+    private(set) var network: any NetworkProtocol = NetworkClient(
+        baseURL: AppConfig.apiBaseURL,
+        printDebug: true
+    )
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        setupDependencies()
+{% if includeFirebase %}
+        FirebaseApp.configure()
+
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+
+        application.registerForRemoteNotifications()
+{% endif %}
+        return true
+    }
+
+    // MARK: - DI Registration
+    // Thêm module mới: tạo hàm setup riêng và gọi ở đây.
+    private func setupDependencies() {
+        HomeDI.shared.registers(network: network)
+    }
+
+}
+{% if includeFirebase %}
+// MARK: - UNUserNotificationCenterDelegate
+extension AppDelegate:  @preconcurrency UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // Xử lý khi user bấm vào thông báo
+        let userInfo = response.notification.request.content.userInfo
+        print("Did receive notification click: \(userInfo)")
+        completionHandler()
+    }
+}
+
+// MARK: - MessagingDelegate & APNs
+extension AppDelegate: @preconcurrency MessagingDelegate {
+    func messaging(
+        _ messaging: Messaging,
+        didReceiveRegistrationToken fcmToken: String?
+    ) {
+        guard let fcmToken = fcmToken else { return }
+        print("Firebase registration token: \(fcmToken)")
+        // Có thể gửi fcmToken lên server ở đây
+    }
+}
+
+extension AppDelegate {
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Messaging.messaging().apnsToken = deviceToken
+        let tokenParts = deviceToken.map { data in
+            String(format: "%02.2hhx", data)
+        }
+        let token = tokenParts.joined()
+        print("deviceToken:\(token)")
+    }
+}
+{% endif %}

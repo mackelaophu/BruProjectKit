@@ -1,0 +1,28 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+#if TUIST
+    import struct ProjectDescription.PackageSettings
+
+    let packageSettings = PackageSettings(
+        productTypes: [
+            "Lottie": .framework,
+{% if includeRealtimeSocket %}            "Starscream": .framework,
+{% endif %}        ],
+        baseSettings: .settings(configurations: [
+            .debug(name: "Debug-SIT"),
+            .release(name: "Release-SIT"),
+            .debug(name: "Debug-PROD"),
+            .release(name: "Release-PROD")
+        ])
+    )
+#endif
+
+let package = Package(
+    name: "{{ name }}",
+    dependencies: [
+        .package(url: "https://github.com/airbnb/lottie-spm.git", .exact("4.5.1")),
+{% if includeFirebase %}        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "11.0.0")),
+{% endif %}{% if includeRealtimeSocket %}        .package(url: "https://github.com/daltoniam/Starscream.git", .upToNextMinor(from: "4.0.8")),
+{% endif %}    ]
+)
