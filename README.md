@@ -102,6 +102,19 @@ qua Stencil nên **không giữ được bit thực thi** gốc. Cùng lý do đ
 nằm phẳng ở root project, không lồng trong thư mục con) cũng phải chuyển sang `.file` thay vì
 `.directory`, nên cũng mất `+x` — xem bước 9 ở trên để cấp lại.
 
+## Nếu di chuyển thư mục project sang vị trí khác
+
+`Tuist/.build` (cache SwiftPM resolve dependency, ví dụ Lottie) lưu đường dẫn tuyệt đối lúc
+build — di chuyển cả thư mục project sang chỗ khác mà không xoá cache này sẽ gặp lỗi kiểu
+`Couldn't find xcframework at <đường dẫn cũ>/...`. Trước khi `tuist generate` lại ở vị trí mới:
+```
+rm -rf Tuist/.build Derived *.xcodeproj *.xcworkspace
+tuist install
+tuist generate
+```
+(file `.gitignore` sinh sẵn — xem bên dưới — đã loại trừ các thư mục này khỏi git, nhưng chúng
+vẫn tồn tại trên đĩa nên phải tự xoá tay khi di chuyển.)
+
 ## Việc còn lại / rủi ro đã biết
 
 - Đã build-test thành công phần khung sinh project (`tuist install` + `tuist scaffold list` +

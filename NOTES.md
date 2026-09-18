@@ -117,3 +117,18 @@ bình thường được, không vướng bug basename như các target động 
 
 Chưa xác nhận: `tuist generate` + mở Xcode có hiển thị đúng icon placeholder này không (đang chờ
 bạn chạy lại sau khi xoá cây `RubikLarPetrus` cũ và scaffold lại).
+
+## Thêm .gitignore (2026-09-18, theo yêu cầu người dùng)
+Đã thêm `.gitignore` (macOS + Xcode + Tuist derived/`Tuist/.build`) do người dùng cung cấp, vào cả:
+- Project `RubikLarPetrus` đã gen sẵn (ghi trực tiếp).
+- Template: bundle tại `Sources/gitignore-template.txt`, gắn vào manifest qua
+  `.file(path: ".gitignore", templatePath: "Sources/gitignore-template.txt")` — item đầu tiên
+  trong danh sách items để dễ thấy.
+
+Cũng phát hiện + xử lý 1 vấn đề thực tế: người dùng di chuyển cả `RubikLarPetrus` và `BruProjectKit`
+từ `Downloads/AdapfitV2/` sang `Downloads/Projects/` (2 thư mục vẫn là sibling, plugin path tuyệt
+đối trong Tuist.swift không còn liên quan vì Tuist.swift đã được dọn về bản sạch — không có plugin
+— từ bước 8 trước đó). Lỗi gặp phải: `tuist generate` báo "Couldn't find xcframework" tại ĐƯỜNG DẪN
+CŨ — do `Tuist/.build` (cache SwiftPM resolve Lottie) lưu absolute path lúc build, không tự cập
+nhật khi thư mục bị di chuyển. Đã xoá `Tuist/.build` + `Derived` + `.xcodeproj`/`.xcworkspace` cũ
+tại vị trí mới, ghi chú lại trong README mục "Nếu di chuyển thư mục project sang vị trí khác".

@@ -29,6 +29,7 @@ let template = Template(
     ],
     items: [
         // MARK: Cấu hình gốc Tuist
+        .file(path: ".gitignore", templatePath: "Sources/gitignore-template.txt"),
         .file(path: "Project.swift", templatePath: "Stencils/Project.stencil"),
         // Tuist.swift KHÔNG được sinh ở đây: thư mục đích buộc phải có sẵn Tuist.swift (khai báo
         // plugin BruProjectKit) TRƯỚC khi `tuist install`/`tuist scaffold` chạy được — Tuist không
