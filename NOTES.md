@@ -69,3 +69,34 @@ thử trước — để dành làm trực tiếp trên máy bạn bằng `devic
   --development-team 32483KQ8R6` render đúng `Project.swift`/`Workspace.swift` (tên, bundleId,
   DEVELOPMENT_TEAM đều đúng) — trước khi gặp lỗi Tuist.swift ở trên (nay đã sửa).
 - Chưa xác nhận: `tuist generate` + build thật trên Xcode (chờ bạn chạy nốt sau khi retest).
+
+## Fix bug hệ thống ở .directory (2026-09-18, sau khi tuist generate lỗi thật)
+`tuist generate` báo: thư mục `Targets/RubikLarPetrusNetwork/Sources` không tồn tại — điều tra ra
+`.directory(path:sourcePath:)` copy sourcePath NHƯ 1 THƯ MỤC CON tên = basename(sourcePath), nằm
+BÊN TRONG path (path = thư mục cha), không phải "path = chính thư mục đích" như giả định ban đầu.
+Ví dụ thực tế đã thấy: `.directory(path: "Targets/Common", sourcePath: "Sources/Common")` tạo ra
+`Targets/Common/Common/**` (thừa 1 cấp), tương tự cho UICore, Network, Tuist/Templates/{Module,
+ChildModule}, `{{name}}/Sources/Home`, và cả `generate_*.sh` (bị gom vào 1 thư mục `GenerateScripts/`
+thay vì nằm phẳng ở root).
+
+Đã sửa toàn bộ trong `NewProject.swift`:
+- Common/UICore/Tuist-Templates/Home: đổi `path` thành thư mục CHA (vd `"Targets"` thay vì
+  `"Targets/Common"`) — giữ nguyên `.directory`, không mất quyền thực thi vì các thư mục này không
+  có file cần +x.
+- `{{name}}Network`: KHÔNG dùng `.directory` được nữa vì basename thư mục bundle sẵn ("Network")
+  không thể đổi tên động theo `{{ name }}Network` — chuyển sang liệt kê trực tiếp file
+  `Sources/Network.swift` qua `.file`, và thêm `.string(...Resources/.gitkeep...)` để Resources
+  (rỗng) vẫn tồn tại (Project.swift có khai báo `resources` glob cho target này).
+- `generate_*.sh`: chuyển 4 file sang `.file` để nằm phẳng ở root (đúng convention AdapfitV2) thay
+  vì bị `.directory` gom vào thư mục con — đánh đổi: `.file` không giữ được bit thực thi gốc, cần
+  `chmod +x` tay 1 lần sau scaffold (đã thêm README bước 9).
+- Phát hiện thêm 1 thiếu sót: `RubikLarPetrusTests` (target test) cần `\(name)/Tests/**` tồn tại —
+  AdapfitV2 gốc có sẵn 1 file test rỗng do Xcode sinh, đã port sang `Stencils/AppTests.stencil` +
+  thêm item `.file(path: "\(name)/Tests/\(name)Tests.swift", ...)`.
+
+Đã xoá cây file cũ trong `RubikLarPetrus/` (Project.swift, Workspace.swift, Tuist/, Targets/,
+RubikLarPetrus/, GenerateScripts/) để chạy lại `tuist scaffold` sạch từ đầu — giữ nguyên
+`Tuist.swift` (path tuyệt đối đã đúng, không cần sửa lại).
+
+Chưa xác nhận: `tuist scaffold` sau fix này chạy hết toàn bộ item không lỗi, và `tuist generate` +
+build Xcode thật (đang chờ bạn chạy lại).

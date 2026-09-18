@@ -52,20 +52,41 @@ let template = Template(
         .file(path: "Tuist/Configs/PROD.xcconfig", templatePath: "Stencils/PROD.xcconfig.stencil"),
 
         // MARK: Module dùng chung — copy nguyên vẹn từ AdapfitV2, không templating bên trong
-        .directory(path: "Targets/Common", sourcePath: "Sources/Common"),
+        // LƯU Ý cơ chế .directory(path:sourcePath:): Tuist copy sourcePath NHƯ MỘT THƯ MỤC CON có
+        // tên = basename(sourcePath) nằm bên trong path (path đóng vai trò thư mục CHA), tức là
+        // .directory(path: "Targets/Common", sourcePath: "Sources/Common") sẽ tạo ra
+        // "Targets/Common/Common/**" (thừa 1 cấp) chứ không phải "Targets/Common/**" như tưởng —
+        // đã phát hiện qua lỗi `tuist generate` thật. Vì vậy path ở đây phải là thư mục CHA
+        // ("Targets"), không phải chính thư mục đích.
+        .directory(path: "Targets", sourcePath: "Sources/Common"),
         // AdapfitImage.swift gốc đã bị loại khỏi thư mục Common được bundle sẵn (Sources/Common) —
         // sinh riêng ở đây để đổi tên file theo {{ name }}Image.swift (đã chốt, xem NOTES.md).
         .file(path: "Targets/Common/Sources/\(nameAttribute)Image.swift", templatePath: "Stencils/AppImage.stencil"),
-        .directory(path: "Targets/UICore", sourcePath: "Sources/UICore"),
-        .directory(path: "Targets/\(nameAttribute)Network", sourcePath: "Sources/Network"),
+        .directory(path: "Targets", sourcePath: "Sources/UICore"),
+        // Target Network có tên động ({{ name }}Network) nên KHÔNG dùng .directory được (basename
+        // thư mục bundle sẵn là "Network", không thể đổi thành tên động lúc scaffold) — liệt kê
+        // trực tiếp từng file thay vì copy cả thư mục. Sources/Network chỉ có đúng 1 file thật là
+        // Network.swift (Resources/Tests/Previews rỗng, không có file nào — xem NOTES.md); vẫn cần
+        // tạo sẵn thư mục Resources rỗng vì Project.swift khai báo resources glob cho target này,
+        // Tuist sẽ báo lỗi "directory does not exist" khi generate nếu thư mục đó không tồn tại.
+        .file(path: "Targets/\(nameAttribute)Network/Sources/Network.swift", templatePath: "Sources/Network/Sources/Network.swift"),
+        .string(path: "Targets/\(nameAttribute)Network/Resources/.gitkeep", contents: ""),
         // SocketService bản "trần" (đã bỏ phần OTTHandler/OTTItem/OTTType riêng của OTT) — chỉ
         // thật sự có nội dung khi includeRealtimeSocket = true, xem ghi chú trong stencil.
         .file(path: "Targets/\(nameAttribute)Network/Sources/SocketService.swift", templatePath: "Stencils/SocketService.stencil"),
 
         // MARK: Cơ chế scaffold module con — mang nguyên convention hiện có của AdapfitV2
-        .directory(path: "Tuist/Templates/Module", sourcePath: "Sources/TuistTemplates/Module"),
-        .directory(path: "Tuist/Templates/ChildModule", sourcePath: "Sources/TuistTemplates/ChildModule"),
-        .directory(path: ".", sourcePath: "Sources/GenerateScripts"),
+        // (cùng lý do path=thư mục cha như ở trên)
+        .directory(path: "Tuist/Templates", sourcePath: "Sources/TuistTemplates/Module"),
+        .directory(path: "Tuist/Templates", sourcePath: "Sources/TuistTemplates/ChildModule"),
+        // generate_*.sh: liệt kê từng file (không dùng .directory) để giữ đúng vị trí gốc — nằm
+        // thẳng ở root project, không lồng trong thư mục con nào (giống convention AdapfitV2).
+        // .file ghi lại nội dung file (qua Stencil) nên KHÔNG giữ được bit thực thi (+x) gốc —
+        // cần chạy `chmod +x generate_*.sh` 1 lần sau khi scaffold xong (đã thêm vào README.md).
+        .file(path: "generate_module.sh", templatePath: "Sources/GenerateScripts/generate_module.sh"),
+        .file(path: "generate_child_module.sh", templatePath: "Sources/GenerateScripts/generate_child_module.sh"),
+        .file(path: "generate_main_feature.sh", templatePath: "Sources/GenerateScripts/generate_main_feature.sh"),
+        .file(path: "generate_main_child_feature.sh", templatePath: "Sources/GenerateScripts/generate_main_child_feature.sh"),
 
         // MARK: Main app skeleton
         .file(path: "\(nameAttribute)/Sources/\(nameAttribute)App.swift", templatePath: "Stencils/App.stencil"),
@@ -73,10 +94,14 @@ let template = Template(
         .file(path: "\(nameAttribute)/Sources/AppRouter.swift", templatePath: "Stencils/AppRouter.stencil"),
         .file(path: "\(nameAttribute)/Sources/AppConfig.swift", templatePath: "Stencils/AppConfig.stencil"),
         .file(path: "\(nameAttribute)/\(nameAttribute).entitlements", templatePath: "Stencils/App.entitlements"),
+        // RubikLarPetrusTests (Project.stencil) cần "\(name)/Tests/**" tồn tại — AdapfitV2 gốc có
+        // sẵn 1 file test rỗng mặc định do Xcode sinh ra, port lại tương ứng ở đây.
+        .file(path: "\(nameAttribute)/Tests/\(nameAttribute)Tests.swift", templatePath: "Stencils/AppTests.stencil"),
 
         // MARK: Feature mẫu Home — copy nguyên vẹn, HomeView.swift đã đổi thành bản trống (không còn
         // Chart/Exercises/Team/Settings) để project mới build được ngay.
-        .directory(path: "\(nameAttribute)/Sources/Home", sourcePath: "Sources/Home"),
+        // (cùng lý do path=thư mục cha: "\(nameAttribute)/Sources", không phải ".../Sources/Home")
+        .directory(path: "\(nameAttribute)/Sources", sourcePath: "Sources/Home"),
 
         // MARK: Resource rỗng
         .string(

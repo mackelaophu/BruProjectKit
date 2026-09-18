@@ -74,7 +74,12 @@ BruProjectKit/
    let tuist = Tuist(project: .tuist())
    EOF
    ```
-9. `tuist generate` rồi mở `.xcworkspace`, build thử target `RubikLarPetrus`.
+9. **Cấp lại quyền thực thi cho 4 script `generate_*.sh`** — cùng lý do kỹ thuật như bước 8
+   (Tuist ghi lại nội dung file qua template nên không giữ được bit `+x` gốc):
+   ```
+   chmod +x generate_module.sh generate_child_module.sh generate_main_feature.sh generate_main_child_feature.sh
+   ```
+10. `tuist generate` rồi mở `.xcworkspace`, build thử target `RubikLarPetrus`.
 
 ### Vì sao bước 8 phải làm tay, template không tự sinh Tuist.swift
 
@@ -83,6 +88,19 @@ Tuist **không cho phép** một scaffold template ghi đè lên file đã tồn
 exists`). Mà `Tuist.swift` (khai báo plugin) buộc phải có sẵn từ bước 3 để `tuist install`/
 `tuist scaffold` chạy được ngay từ đầu — nên nó luôn "đã tồn tại" khi scaffold chạy tới, không
 thể để scaffold tự tạo lại. Đây là giới hạn của Tuist, không phải lỗi ở template này.
+
+### Vì sao script `generate_*.sh` mất quyền thực thi sau khi scaffold, và vì sao `Targets/*Network`
+### không dùng `.directory` như `Common`/`UICore`
+
+`Template.Item.directory(path:sourcePath:)` copy **nguyên** thư mục nguồn (giữ cả quyền thực thi)
+nhưng lồng nó vào bên trong `path` theo tên chính nó — tức `path` đóng vai trò thư mục **cha**,
+không phải chính thư mục đích như tưởng ban đầu (đã sửa lỗi lồng thư mục thừa 1 cấp này ở
+`Common`/`UICore`/`Tuist/Templates/*`). Do target `{{ name }}Network` có tên **động** (phụ thuộc
+`name` truyền vào), không thể dùng `.directory` cho nó (thư mục bundle sẵn tên cố định là
+`Network`) nên phải liệt kê từng file qua `.file(path:templatePath:)` — cách này ghi lại nội dung
+qua Stencil nên **không giữ được bit thực thi** gốc. Cùng lý do đó, 4 script `generate_*.sh` (cần
+nằm phẳng ở root project, không lồng trong thư mục con) cũng phải chuyển sang `.file` thay vì
+`.directory`, nên cũng mất `+x` — xem bước 9 ở trên để cấp lại.
 
 ## Việc còn lại / rủi ro đã biết
 
