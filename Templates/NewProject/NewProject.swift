@@ -30,15 +30,11 @@ let template = Template(
     items: [
         // MARK: Cấu hình gốc Tuist
         .file(path: "Project.swift", templatePath: "Stencils/Project.stencil"),
+        // Tuist.swift KHÔNG được sinh ở đây: thư mục đích buộc phải có sẵn Tuist.swift (khai báo
+        // plugin BruProjectKit) TRƯỚC khi `tuist install`/`tuist scaffold` chạy được — Tuist không
+        // cho phép template ghi đè file đã tồn tại (renamex_np "File exists"). Nên Tuist.swift giữ
+        // nguyên bản có khai báo plugin sau khi scaffold; xem README.md để lấy lệnh dọn về bản sạch.
         .file(path: "Workspace.swift", templatePath: "Stencils/Workspace.stencil"),
-        .string(
-            path: "Tuist.swift",
-            contents: """
-            import ProjectDescription
-
-            let tuist = Tuist(project: .tuist())
-            """
-        ),
         .file(path: "Tuist/Package.swift", templatePath: "Stencils/Package.stencil"),
         .string(
             path: "Tuist/Configs/Shared.xcconfig",

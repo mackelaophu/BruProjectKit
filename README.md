@@ -41,29 +41,58 @@ BruProjectKit/
    ```
    mkdir RubikLarPetrus && cd RubikLarPetrus
    ```
-3. Tạo file `Tuist.swift` khai báo plugin — dùng local path lúc đang test:
+3. Tạo file `Tuist.swift` khai báo plugin — dùng **đường dẫn tuyệt đối** tới `BruProjectKit`
+   (Tuist không resolve `..`/đường dẫn tương đối lùi cấp cha trong `.local(path:)` đúng như
+   filesystem thông thường, nên bắt buộc dùng path tuyệt đối lúc còn test local):
    ```swift
    import ProjectDescription
 
    let tuist = Tuist(
      project: .tuist(plugins: [
-       .local(path: "../BruProjectKit")
+       .local(path: "/đường/dẫn/tuyệt/đối/tới/BruProjectKit")
      ])
    )
    ```
-   (đường dẫn tương đối trỏ về thư mục `BruProjectKit` bạn vừa nhận — đổi cho khớp vị trí thật.
-   Sau khi push `BruProjectKit` lên GitHub, đổi sang `.git(url: "...", tag: "1.0.0")`.)
-4. `tuist install`
-5. `tuist scaffold NewProject --name RubikLarPetrus --development-team <TEAM_ID_CỦA_BẠN>`
+   (Sau khi push `BruProjectKit` lên GitHub, đổi sang `.git(url: "...", tag: "1.0.0")` — lúc đó
+   hết cần lo path tuyệt đối.)
+4. `tuist clean plugins` — dọn cache plugin cũ trước khi install. Bước này **quan trọng** nếu
+   trước đó bạn từng chạy `tuist install` với path sai/khác — Tuist cache lại kết quả resolve
+   plugin, sửa `Tuist.swift` xong mà không clean thì `tuist scaffold list` có thể không thấy
+   template dù `tuist install` báo "Success".
+5. `tuist install`
+6. (khuyến khích) `tuist scaffold list` — kiểm tra template `NewProject` đã xuất hiện trong danh
+   sách chưa, trước khi scaffold thật.
+7. `tuist scaffold NewProject --name RubikLarPetrus --development-team <TEAM_ID_CỦA_BẠN>`
    (thêm `--include-firebase true` / `--include-realtime-socket true` nếu muốn bật)
-6. `tuist generate` rồi mở `.xcworkspace`, build thử target `RubikLarPetrus`.
+8. **Dọn lại `Tuist.swift`** — template **không** tự sinh `Tuist.swift` (xem mục "Vì sao không
+   tự động" bên dưới), nên sau khi scaffold xong, file này vẫn là bản có khai báo plugin. Ghi đè
+   nó về bản sạch giống hệt `Tuist.swift` gốc của AdapfitV2 bằng lệnh:
+   ```
+   cat > Tuist.swift <<'EOF'
+   import ProjectDescription
+
+   let tuist = Tuist(project: .tuist())
+   EOF
+   ```
+9. `tuist generate` rồi mở `.xcworkspace`, build thử target `RubikLarPetrus`.
+
+### Vì sao bước 8 phải làm tay, template không tự sinh Tuist.swift
+
+Tuist **không cho phép** một scaffold template ghi đè lên file đã tồn tại sẵn trong thư mục đích
+(lỗi thực tế gặp phải: `File already exists: Can't rename '.tmp-xxx' to 'Tuist.swift' ... File
+exists`). Mà `Tuist.swift` (khai báo plugin) buộc phải có sẵn từ bước 3 để `tuist install`/
+`tuist scaffold` chạy được ngay từ đầu — nên nó luôn "đã tồn tại" khi scaffold chạy tới, không
+thể để scaffold tự tạo lại. Đây là giới hạn của Tuist, không phải lỗi ở template này.
 
 ## Việc còn lại / rủi ro đã biết
 
-- Chưa build-test thật (xem cảnh báo ở trên).
+- Đã build-test thành công phần khung sinh project (`tuist install` + `tuist scaffold list` +
+  `tuist scaffold NewProject` chạy được trên máy thật) — còn `tuist generate`/build Xcode thật
+  thì bạn cần tự xác nhận nốt.
 - Tuist không hỗ trợ loại bỏ hẳn 1 file theo điều kiện — khi `includeFirebase`/
   `includeRealtimeSocket` tắt, file liên quan vẫn được tạo ra nhưng rỗng (xem
   `Stencils/SocketService.stencil`) — vô hại nhưng hơi "rác" trong cây thư mục, có thể chấp
   nhận được cho bản đầu.
 - `Sources/Network/Sources/Network.swift`: dòng comment ví dụ đã đổi `com.bru.adapfit` thành
   `your.bundle.id` — không phải code chạy, chỉ là ví dụ trong comment.
+- `Tuist.swift` sau khi scaffold cần dọn tay theo bước 8 ở trên (không tự động được, xem lý do).

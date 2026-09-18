@@ -49,3 +49,23 @@ thử trước — để dành làm trực tiếp trên máy bạn bằng `devic
 - Chưa thể `tuist install`/`tuist scaffold` thật trong sandbox cloud này để build-test (mạng
   cloud không cho tải Tuist CLI, và Tuist vốn cần macOS để generate/build .xcodeproj) — việc
   build-test thật sẽ làm ở Phase 7 trên máy bạn.
+
+## Cập nhật sau khi test thật trên máy (2026-09-18)
+- Bug đã gặp & đã sửa:
+  1. `.local(path: "../BruProjectKit")` không hoạt động — Tuist không resolve `..` trong
+     `.local(path:)` như filesystem thường. Fix: dùng đường dẫn tuyệt đối. Đã cập nhật README.
+  2. Sau khi sửa path, `tuist install` "Success" nhưng `tuist scaffold list` không thấy
+     `NewProject` — do Tuist cache lại kết quả resolve plugin từ lần chạy path sai trước đó.
+     Fix: `tuist clean plugins` trước khi `tuist install` lại. Đã thêm vào README như bước bắt
+     buộc khi đổi path plugin.
+  3. `tuist scaffold NewProject ...` báo lỗi `File already exists` khi ghi `Tuist.swift` — Tuist
+     không cho phép template ghi đè file đã tồn tại, mà `Tuist.swift` (khai báo plugin) buộc phải
+     có sẵn trước khi scaffold chạy được. Đã hỏi và được xác nhận: bỏ hẳn item
+     `.string(path: "Tuist.swift", ...)` khỏi `NewProject.swift` (manifest), thay bằng bước dọn
+     tay sau khi scaffold xong (ghi đè Tuist.swift về bản sạch `Tuist(project: .tuist())`) — xem
+     README mục "Cách dùng" bước 8.
+- Đã xác nhận chạy thật thành công: `tuist install`, `tuist clean plugins`, `tuist scaffold list`
+  (thấy đúng template `NewProject`), `tuist scaffold NewProject --name RubikLarPetrus
+  --development-team 32483KQ8R6` render đúng `Project.swift`/`Workspace.swift` (tên, bundleId,
+  DEVELOPMENT_TEAM đều đúng) — trước khi gặp lỗi Tuist.swift ở trên (nay đã sửa).
+- Chưa xác nhận: `tuist generate` + build thật trên Xcode (chờ bạn chạy nốt sau khi retest).
