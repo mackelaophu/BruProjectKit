@@ -132,3 +132,12 @@ từ `Downloads/AdapfitV2/` sang `Downloads/Projects/` (2 thư mục vẫn là s
 CŨ — do `Tuist/.build` (cache SwiftPM resolve Lottie) lưu absolute path lúc build, không tự cập
 nhật khi thư mục bị di chuyển. Đã xoá `Tuist/.build` + `Derived` + `.xcodeproj`/`.xcworkspace` cũ
 tại vị trí mới, ghi chú lại trong README mục "Nếu di chuyển thư mục project sang vị trí khác".
+
+## Fix lỗi Signing "requires a development team" (2026-10-30, phát hiện ở HanziFlash)
+Nguyên nhân: khi 1 target (ví dụ app) khai `settings: .settings(base: [...])` mà không có `configurations:`,
+Tuist tạo thêm config `Debug` và `Release` mặc định CHỈ cho target đó. 2 config này không thừa hưởng
+`DEVELOPMENT_TEAM`/`CODE_SIGN_STYLE` từ settings cấp project → Xcode hiện 2 nhóm Signing, nhóm
+"Debug and Release" có Team = None và báo lỗi. Chọn Team bằng tay chỉ tạm thời vì `.xcodeproj` bị sinh lại.
+Cách đúng: `configurations: []` (template đã có helper `targetSettings(_:)` trong Project.stencil).
+Quy tắc: mọi settings riêng của target phải đi qua `targetSettings([...])`, không viết `.settings(base:)` trần.
+Sau khi sửa manifest phải chạy lại `tuist generate` (đóng Xcode trước) mới thấy hiệu lực.

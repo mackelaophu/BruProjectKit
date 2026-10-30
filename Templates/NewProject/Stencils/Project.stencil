@@ -13,6 +13,13 @@ func makeModule(name: String, dependencies: [TargetDependency], settings: Settin
     settings: settings
   )
 }
+// Settings riêng cho 1 target: LUÔN dùng hàm này thay vì .settings(base:) trần.
+// .settings(base:) không có `configurations:` khiến Tuist tạo thêm 2 config Debug/Release mặc định cho target;
+// 2 config đó không thừa hưởng DEVELOPMENT_TEAM/CODE_SIGN_STYLE từ project, nên Xcode báo
+// "Signing requires a development team". `configurations: []` giữ target dùng đúng 4 config của project.
+func targetSettings(_ base: SettingsDictionary) -> Settings {
+  return Settings.settings(base: base, configurations: [])
+}
 let settings = Settings.settings(
   base: [
     "SWIFT_VERSION": "6.0",
